@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title></title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <script>
+      // ipcRenderer -> 建立与主 ipc 的通信
+      // onmessage -> 接受通道的消息
+      // postMessage -> 发送处理完成的数据消息 -> result
+      const { ipcRenderer } = require('electron')
+      function doWork(input){
+        return input * 2
+      }
+
+      ipcRenderer.on('new-work', (event, args)=>{
+        const [port] = event.ports
+        port.onmessage = (event)=>{
+          // 从index渲染进行（通道1）传递过来的数据
+          const result = doWork(event.data)
+          // 响应通道数据 -> 通道2 发送数据
+          port.postMessage(result)
+        }
+      })
+    </script>
+  </body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electron</title>
+  <script src="https://cdn.bootcdn.net/ajax/libs/vue/2.6.14/vue.common.dev.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <h1>Hello Electron123</h1>
+    <p>Electron Version: {{ electronVersion }}</p>
+    <p>Node Version: {{ nodeVersion }}</p>
+    <p>Chromium Version: {{ chromeVersion }}</p>
+    <p>count: {{ count }}</p>
+    <p>result: {{ result }}</p>
+    <button @click="sendMsg">发送消息给main</button>
+  </div>
+
+  <script>
+    const versions = process.versions
+
+    const { ipcRenderer } = require('electron')
+
+    ipcRenderer.on('child-channel', (event, arg) => {
+      const [port] = event.ports
+
+      port.onmessage = (event) => {
+        // 取worker返回的处理过后的数据
+        app.result = event.data
+      }
+
+      port.postMessage(app.count)
+    })
+
+    const app = new Vue({
+      el: '#app',
+      data: {
+        electronVersion: versions.electron,
+        nodeVersion: versions.node,
+        chromeVersion: versions.chrome,
+        count: 10,
+        result: 0
+      },
+      methods: {
+        sendMsg: function(){
+          // 准备的测试数据 -> 发送给worker渲染进程 -> 接受处理完成的数据
+          this.count += 10
+          ipcRenderer.send('my-channel', {event: 'msg', data: 'hello'})
+        }
+      }
+    })
+  </script>
+</body>
+
+</html>
