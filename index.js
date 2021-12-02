@@ -1,22 +1,7 @@
-const { app, BrowserWindow, ipcMain, MessageChannelMain } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
 
 // 主进程
-// async 要保证 worker 子进程 要优先于 win 主进程加载
-const createWindow = async () => {
-  // 创建浏览器窗口
-  const worker = new BrowserWindow({
-    show: false,
-    // width: 1200,
-    // height: 600,
-    webPreferences: {
-      nodeIntegration: true,
-      // 最新版本Electron v15 必须添加 
-      contextIsolation: false
-    }
-  })
-
-  await worker.loadFile('child.html')
-
+const createWindow = () => {
   // 创建浏览器窗口
   const win = new BrowserWindow({
     width: 1200,
@@ -33,21 +18,18 @@ const createWindow = async () => {
   // 打开调试
   win.webContents.openDevTools()
 
-
-  // 主进程与渲染进程通信
-  ipcMain.on('my-channel', (event, args) => {
-    if (event.senderFrame === win.webContents.mainFrame) {
-      // Create a new channel ... 建立通道1、通道2
-      const { port1, port2 } = new MessageChannelMain()
-      // ... send one end to the worker ...
-      worker.webContents.postMessage('new-work', null, [port1])
-      // ... and the other end to the main window.
-      event.senderFrame.postMessage('child-channel', null, [port2])
-      // Now the main window and the worker can communicate with each other
-      // without going through the main process!
-    }
-  })
 }
+
+// 主进程与渲染进程通信, 主进程接收渲染进程发送的消息
+ipcMain.on('my-channel', (event, args) => {
+  console.log('🚀 ~ event', event) // 在命令行处打印
+  console.log('🚀 ~ args', args) // 在命令行处打印
+  // 主进程往渲染进程发送消息 
+  event.reply('child-channel', {
+    event: 'msg',
+    data: 'hello child!'
+  })
+})
 
 // 例子将会展示如何在最后一个窗口被关闭时退出应用
 app.on('window-all-closed', () => {
@@ -92,4 +74,3 @@ app.whenReady().then(() => {
     }
   })
 })
-

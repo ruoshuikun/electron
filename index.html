@@ -15,25 +15,18 @@
     <p>Electron Version: {{ electronVersion }}</p>
     <p>Node Version: {{ nodeVersion }}</p>
     <p>Chromium Version: {{ chromeVersion }}</p>
-    <p>count: {{ count }}</p>
-    <p>result: {{ result }}</p>
     <button @click="sendMsg">发送消息给main</button>
   </div>
 
   <script>
-    const versions = process.versions
-
     const { ipcRenderer } = require('electron')
 
+    const versions = process.versions
+
+    // 接收主进程发送的消息
     ipcRenderer.on('child-channel', (event, arg) => {
-      const [port] = event.ports
-
-      port.onmessage = (event) => {
-        // 取worker返回的处理过后的数据
-        app.result = event.data
-      }
-
-      port.postMessage(app.count)
+      console.log('🚀 ~ event', event) // 在调试处打印
+      console.log('🚀 ~ arg', arg) // 在调试处打印
     })
 
     const app = new Vue({
@@ -42,14 +35,11 @@
         electronVersion: versions.electron,
         nodeVersion: versions.node,
         chromeVersion: versions.chrome,
-        count: 10,
-        result: 0
       },
       methods: {
-        sendMsg: function(){
-          // 准备的测试数据 -> 发送给worker渲染进程 -> 接受处理完成的数据
-          this.count += 10
-          ipcRenderer.send('my-channel', {event: 'msg', data: 'hello'})
+        sendMsg: function () {
+          // 渲染进程往主进程发送消息
+          ipcRenderer.send('my-channel', { event: 'msg', data: 'hello' })
         }
       }
     })
